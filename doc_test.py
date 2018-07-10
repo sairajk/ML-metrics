@@ -1,18 +1,50 @@
+import numpy as np
+from sklearn.utils import check_X_y
+from sklearn.utils import safe_indexing
+from sklearn.metrics.pairwise import pairwise_distances
+from sklearn.preprocessing import LabelEncoder
+
+
+def check_number_of_labels(n_labels, n_samples):
+    if not 1 < n_labels < n_samples:
+        raise ValueError("Number of labels is %d. Valid values are 2 "
+                         "to n_samples - 1 (inclusive)" % n_labels)
+
+
 def score_function(X, labels):
-    """
-    >>> import numpy as np
-    >>> from sklearn.utils import safe_indexing
-    >>> from sklearn.metrics.pairwise import pairwise_distances
-    >>> from sklearn.preprocessing import LabelEncoder
+    """Computes Score Function.
+
+    Score Function is a bounded Cluster Validity Index. It is based on
+    standard cluster properties and is proved to be better than or atleast as
+    good as existing validation indices for hyperspheroidal clusters. The
+    score function is a combination of two terms: the distance between
+    clusters (intercluster distance) and the distance inside a cluster (intra-
+    cluster distance). Also, the score function can used for two purposes:
+    1) to estimate the number of clusters; and
+    2) to evaluate the quality of the clustering results.
+
+    DRAWBACKS OF EXISTING VALIDITY INDICES :
+    Most current validity indices only cover a subset of important aspects of
+    clusters. Moreover, these indices are relevant only for data sets
+    containing at least two clusters. As a result, these indices are useful in
+    certain situations and are not of general-purpose.
+
+    The score function is tested against four existing validity indices, that
+    are Dunn index, Davies-Bouldin index, Silhouette index, Maulik-
+    Bandyopadhyay index on several artificial and real-life data sets to
+    evaluate the performance of the score function. It is found to be always
+    as good or better than these indices in the case of hyperspheroidal
+    clusters. It also works well on multidimensional data sets and is able to
+    accommodate unique and sub-cluster cases.
+    * Score Function has a linear computational complexity.
+
+    # DOCTEST FOR SCORE FUNCTION
+
     >>> from sklearn.cluster import KMeans
-    >>> from sklearn.datasets import load_digits, load_iris, load_wine
-    >>> from sklearn.utils import check_X_y
+    >>> from sklearn.datasets import load_iris, load_wine
     >>>
-    >>> def check_number_of_labels(n_labels, n_samples):
-    ...     if not 1 < n_labels < n_samples:
-    ...         raise ValueError("Number of labels is %d. Valid values are 2 "
-    ...                          "to n_samples - 1 (inclusive)" % n_labels)
-    ...
+    >>> # TEST ON IRIS DATA
+    >>>
     >>> loader = load_iris()
     >>> data = loader.data
     >>>
@@ -20,9 +52,44 @@ def score_function(X, labels):
     >>> unique_labels = len(np.unique(loader.target))
     >>> labels = loader.target
     >>> est = KMeans(init='random', n_clusters=unique_labels, n_init=10)
-    >>> est.fit(data)
+    >>> fit_data = est.fit(data)
     >>> score_function(data, est.labels_)
-    0.259
+    0.521
+    >>>
+    >>> # TEST ON WINE DATA
+    >>>
+    >>> loader = load_wine()
+    >>> data = loader.data
+    >>>
+    >>> n_samples, n_features = data.shape
+    >>> unique_labels = len(np.unique(loader.target))
+    >>> labels = loader.target
+    >>> est = KMeans(init='random', n_clusters=unique_labels, n_init=10)
+    >>> fit_data = est.fit(data)
+    >>> score_function(data, est.labels_)
+    0.161
+
+    Parameters
+    ----------
+    X : array-like, shape (``n_samples``, ``n_features``)
+        List of ``n_features``-dimensional data points. Each row corresponds
+        to a single data point.
+
+    labels : array-like, shape (``n_samples``,)
+        Predicted labels for each sample.
+
+    Returns
+    -------
+    sf: float
+        The resulting Score Function.
+
+    References
+    ----------
+    .. [1] Saitta S., Raphael B., Smith I.F.C. (2007).
+        `"A Bounded Index for Cluster Validity"
+        <https://dl.acm.org/citation.cfm?id=1420344>`__.
+        Perner P.(eds) Machine Learning and Data Mining in Pattern Recognition.
+        Lecture Notes in Computer Science, vol 4571.
     """
     # Pre-processing and validation of input data and labels
     X, labels = check_X_y(X, labels)
